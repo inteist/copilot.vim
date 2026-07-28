@@ -26,7 +26,7 @@ function! s:MapTab() abort
   endif
   let tab_map = maparg('<Tab>', 'i', 0, 1)
   if !has_key(tab_map, 'rhs')
-    imap <script><silent><nowait><expr> <Tab> empty(get(g:, 'copilot_no_tab_map')) ? copilot#Accept() : "<Bslash>t"
+    imap <script><silent><nowait><expr> <Tab> empty(get(g:, 'copilot_no_tab_map')) ? copilot#TabAccept() : "<Bslash>t"
   elseif tab_map.rhs !~# 'copilot'
     if tab_map.expr
       let tab_fallback = '{ -> ' . tab_map.rhs . ' }'
@@ -35,9 +35,9 @@ function! s:MapTab() abort
     endif
     let tab_fallback = substitute(tab_fallback, '<SID>', '<SNR>' . get(tab_map, 'sid') . '_', 'g')
     if get(tab_map, 'noremap') || get(tab_map, 'script') || mapcheck('<Left>', 'i') || mapcheck('<Del>', 'i')
-      exe 'imap <script><silent><nowait><expr> <Tab> copilot#Accept(' . tab_fallback . ')'
+      exe 'imap <script><silent><nowait><expr> <Tab> copilot#TabAccept(' . tab_fallback . ')'
     else
-      exe 'imap <silent><nowait><expr>         <Tab> copilot#Accept(' . tab_fallback . ')'
+      exe 'imap <silent><nowait><expr>         <Tab> copilot#TabAccept(' . tab_fallback . ')'
     endif
   endif
 endfunction
@@ -56,6 +56,7 @@ augroup github_copilot
   autocmd InsertLeavePre       * call s:Event('InsertLeavePre')
   autocmd BufLeave             * if mode() =~# '^[iR]'|call s:Event('InsertLeavePre')|endif
   autocmd InsertEnter          * call s:Event('InsertEnter')
+  autocmd InsertCharPre        * call s:Event('InsertCharPre')
   autocmd BufEnter             * if mode() =~# '^[iR]'|call s:Event('InsertEnter')|endif
   autocmd BufEnter             * call s:Event('BufEnter')
   autocmd CursorMovedI         * call s:Event('CursorMovedI')

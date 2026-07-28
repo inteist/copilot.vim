@@ -8,6 +8,10 @@ let s:has_ghost_text = s:has_nvim_ghost_text || s:has_vim_ghost_text
 let s:hlgroup = 'CopilotSuggestion'
 let s:annot_hlgroup = 'CopilotAnnotation'
 
+let s:word_pattern = '\%(\k\@!.\)*\k*'
+" Pending double <Tab>; see copilot#TabAccept().
+let s:tab_state = {}
+
 if s:has_vim_ghost_text && empty(prop_type_get(s:hlgroup))
   call prop_type_add(s:hlgroup, {'highlight': s:hlgroup})
 endif
@@ -416,6 +420,9 @@ function! copilot#Schedule() abort
   endif
   call s:UpdatePreview()
   let delay = get(g:, 'copilot_idle_delay', 45)
+  " A new request would replace the completion state a pending second <Tab>
+  " still displays ghost text from, so wait out the window first.
+  let delay = max([delay, float2nr(copilot#DoubleTabRemaining()) + 1])
   call timer_stop(get(g:, '_copilot_timer', -1))
   let g:_copilot_timer = timer_start(delay, function('s:Trigger', [bufnr('')]))
 endfunction
@@ -446,6 +453,7 @@ function! copilot#OnBufEnter() abort
 endfunction
 
 function! copilot#OnInsertLeavePre() abort
+  call copilot#ClearDoubleTab()
   call copilot#Clear()
   call s:ClearPreview()
 endfunction
@@ -480,6 +488,18 @@ function! copilot#TextQueuedForInsertion() abort
   endtry
 endfunction
 
+" Characters after the cursor that still need deleting once `leftover` (the
+" part of the suggestion that is not being inserted yet) is taken into account.
+function! s:TrimDeleteChars(delete_chars, leftover) abort
+  let delete_chars = a:delete_chars
+  let idx = strridx(a:leftover, matchstr(delete_chars, '.$'))
+  while !empty(delete_chars) && idx != -1
+    let delete_chars = substitute(delete_chars, '.$', '', '')
+    let idx = strridx(a:leftover, matchstr(delete_chars, '.$'), idx - 1)
+  endwhile
+  return delete_chars
+endfunction
+
 function! copilot#Accept(...) abort
   let s = copilot#GetDisplayedSuggestion()
   if !empty(s.text)
@@ -491,13 +511,7 @@ function! copilot#Accept(...) abort
     if empty(text)
       let text = s.text
     endif
-    let delete_chars = s.deleteChars
-    let leftover = strpart(s.text, strlen(text))
-    let idx = strridx(leftover, matchstr(delete_chars, '.$'))
-    while !empty(delete_chars) && idx != -1
-      let delete_chars = substitute(delete_chars, '.$', '', '')
-      let idx = strridx(leftover, matchstr(delete_chars, '.$'), idx - 1)
-    endwhile
+    let delete_chars = s:TrimDeleteChars(s.deleteChars, strpart(s.text, strlen(text)))
     if text ==# s.text && has_key(s.item, 'command')
       call copilot#Request('workspace/executeCommand', s.item.command)
     else
@@ -529,11 +543,106 @@ function! copilot#Accept(...) abort
 endfunction
 
 function! copilot#AcceptWord(...) abort
-  return copilot#Accept(a:0 ? a:1 : '', '\%(\k\@!.\)*\k*')
+  return copilot#Accept(a:0 ? a:1 : '', s:word_pattern)
 endfunction
 
 function! copilot#AcceptLine(...) abort
   return copilot#Accept(a:0 ? a:1 : "\r", "[^\n]\\+")
+endfunction
+
+" Accept one word per <Tab>, or the whole suggestion when <Tab> is pressed
+" twice in quick succession (see g:copilot_double_tab_timeout).
+"
+" The second <Tab> does not go back through copilot#Accept().  The completion
+" state it would read describes a cursor position the first <Tab> has already
+" moved past, and when the two presses arrive back to back the buffer has not
+" even caught up with the first insertion yet, so everything the second press
+" needs is captured up front in s:tab_state instead.
+
+function! s:Milliseconds() abort
+  return reltimefloat(reltime()) * 1000
+endfunction
+
+" Milliseconds left in the window during which a second <Tab> accepts the rest
+" of the suggestion, or 0 when no window is open.
+function! copilot#DoubleTabRemaining() abort
+  if empty(s:tab_state) || s:tab_state.bufnr !=# bufnr('') || mode() !~# '^[iR]'
+    return 0
+  endif
+  let remaining = get(g:, 'copilot_double_tab_timeout', 300) - (s:Milliseconds() - s:tab_state.time)
+  return remaining > 0 ? remaining : 0
+endfunction
+
+" Every character of the accepted word passes through InsertCharPre on its way
+" into the buffer; anything typed after those closes the window, so that
+" <Tab>, a keystroke, <Tab> types a tab instead of duplicating the remainder.
+function! copilot#OnInsertCharPre() abort
+  if empty(s:tab_state)
+    return
+  elseif s:tab_state.pending > 0
+    let s:tab_state.pending -= 1
+  else
+    let s:tab_state = {}
+  endif
+endfunction
+
+function! copilot#ClearDoubleTab() abort
+  let s:tab_state = {}
+endfunction
+
+" Insert everything the first <Tab> left behind.
+function! s:AcceptRest() abort
+  let state = s:tab_state
+  let s:tab_state = {}
+  call copilot#Clear()
+  call s:ClearPreview()
+  if has_key(state.item, 'command')
+    call copilot#Request('workspace/executeCommand', state.item.command)
+  else
+    call copilot#Notify('textDocument/didPartiallyAcceptCompletion', {
+          \ 'item': state.item,
+          \ 'acceptedLength': state.acceptedLength})
+  endif
+  let s:suggestion_text = state.text
+  let recall = state.text =~# "\n" ? "\<C-R>\<C-O>=" : "\<C-R>\<C-R>="
+  return repeat("\<Del>", state.deletes) . recall . "copilot#TextQueuedForInsertion()\<CR>\<End>"
+endfunction
+
+function! copilot#TabAccept(...) abort
+  let fallback = a:0 ? a:1 : get(g:, 'copilot_tab_fallback', pumvisible() ? "\<C-N>" : "\t")
+  if copilot#DoubleTabRemaining() > 0
+    return s:AcceptRest()
+  endif
+  let s:tab_state = {}
+  let s = copilot#GetDisplayedSuggestion()
+  if empty(s.text)
+    return copilot#Accept(fallback)
+  endif
+  let word = substitute(matchstr(s.text, "\n*" . '\%(' . s:word_pattern . '\)'), "\n*$", '', '')
+  let rest = strpart(s.text, strlen(word))
+  let state = {}
+  if !empty(word) && !empty(rest)
+    let line_text = strpart(getline('.'), 0, col('.') - 1) . s.text
+    let state = {
+          \ 'bufnr': bufnr(''),
+          \ 'time': s:Milliseconds(),
+          \ 'pending': strchars(word),
+          \ 'text': rest,
+          \ 'item': s.item,
+          \ 'acceptedLength': copilot#util#UTF16Width(line_text) - s.item.range.start.character,
+          \ 'deletes': strchars(s.deleteChars) - strchars(s:TrimDeleteChars(s.deleteChars, rest))}
+  endif
+  let context = get(b:, '_copilot', {})
+  let keys = copilot#AcceptWord(fallback)
+  if !empty(state)
+    let s:tab_state = state
+    if !empty(context) && !exists('b:_copilot')
+      " copilot#Accept() drops the completion state; keep it so the ghost text
+      " for `rest` stays on screen while the second <Tab> is still possible.
+      let b:_copilot = context
+    endif
+  endif
+  return keys
 endfunction
 
 function! copilot#Browser() abort

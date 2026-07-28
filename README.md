@@ -1,5 +1,12 @@
 # GitHub Copilot for Vim and Neovim
 
+> **Fork note.** This fork changes what `<Tab>` does: one press accepts a
+> single word, and a second press within `g:copilot_double_tab_timeout`
+> milliseconds (300 by default) accepts the rest of the suggestion. Set the
+> timeout to 0 for word-at-a-time only. See `:help copilot-i_<Tab>`, and
+> `test/double-tab.vim` for the regression tests. Everything else tracks
+> upstream `release`.
+
 GitHub Copilot is an AI pair programmer tool that helps you write code faster
 and smarter. Trained on billions of lines of public code, GitHub Copilot turns
 natural language prompts including comments and method names into coding

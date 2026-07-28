@@ -137,10 +137,24 @@ g:copilot_workspace_folders
                         buffer and newly seen values will be added
                         automatically.
 
+                                            *g:copilot_double_tab_timeout*
+g:copilot_double_tab_timeout
+                        How long, in milliseconds, a second <Tab> keeps
+                        accepting the rest of the suggestion instead of just
+                        the next word.  Defaults to 300.
+>
+                        let g:copilot_double_tab_timeout = 500
+<
+                        Set it to 0 to turn the double <Tab> off and have
+                        every <Tab> accept a single word.
+
 MAPS                                            *copilot-maps*
 
                                                 *copilot-i_<Tab>*
-Copilot.vim uses <Tab> to accept the current suggestion.  If you have an
+<Tab> accepts one word of the current suggestion.  Pressing it again within
+|g:copilot_double_tab_timeout| milliseconds accepts the whole of what is
+left, so a quick double tap takes the entire suggestion.  Anything typed in
+between ends the window, and so does leaving insert mode.  If you have an
 existing <Tab> map, that will be used as the fallback when no suggestion is
 displayed.
 
@@ -162,6 +176,11 @@ Lua version:
 The argument to copilot#Accept() is the fallback for when no suggestion is
 displayed.  In this example, a regular carriage return is used.  If no
 fallback is desired, use an argument of "" (an empty string).
+
+                                                *copilot#TabAccept()*
+copilot#Accept() always takes the whole suggestion.  The word-then-rest
+behaviour described above lives in copilot#TabAccept(), which takes the same
+fallback argument and is what the <Tab> map uses.
 
 Other Maps ~
 
