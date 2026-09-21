@@ -5,7 +5,7 @@
 > milliseconds (300 by default) accepts the rest of the suggestion. Set the
 > timeout to 0 for word-at-a-time only. See `:help copilot-i_<Tab>`, and
 > `test/double-tab.vim` for the regression tests. Everything else tracks
-> upstream `release`.
+> upstream `release.`
 
 GitHub Copilot is an AI pair programmer tool that helps you write code faster
 and smarter. Trained on billions of lines of public code, GitHub Copilot turns
@@ -15,7 +15,7 @@ suggestions across dozens of languages.
 Copilot.vim is a Vim/Neovim plugin for GitHub Copilot.
 
 To learn more, visit
-[https://github.com/features/copilot](https://github.com/features/copilot).
+<https://github.com/features/copilot>.
 
 ## Getting access to GitHub Copilot
 
@@ -25,40 +25,44 @@ request access from your enterprise admin.
 
 ## Getting started
 
-1.  Install [Neovim][] or the latest patch of [Vim][] (9.0.0185 or newer).
+1. Install [Neovim](https://github.com/neovim/neovim/releases/latest) or the latest patch of [Vim](https://github.com/vim/vim) (9.0.0185 or newer).
 
-2.  Install [Node.js][].  If you use a package manager, make sure to install
-    NPM as well (e.g., `apt install nodejs npm` on Debian/Ubuntu).
+2. Install [Node.js](https://nodejs.org/en/download/).  If you use a package manager, make sure to install
+   NPM as well (e.g., `apt install nodejs npm` on Debian/Ubuntu).
 
-3.  Install `github/copilot.vim` using vim-plug, lazy.nvim, or any other
-    plugin manager.  Or to install manually, run one of the following
-    commands:
+3. Install `github/copilot.vim` using vim-plug, lazy.nvim, or any other
+   plugin manager.  Or to install manually, run one of the following
+   commands:
 
-    * Vim, Linux/macOS:
+   * Vim, Linux/macOS:
 
-          git clone --depth=1 https://github.com/github/copilot.vim.git \
-            ~/.vim/pack/github/start/copilot.vim
+     ```
+     git clone --depth=1 https://github.com/github/copilot.vim.git \
+       ~/.vim/pack/github/start/copilot.vim
+     ```
 
-    * Neovim, Linux/macOS:
+   * Neovim, Linux/macOS:
 
-          git clone --depth=1 https://github.com/github/copilot.vim.git \
-            ~/.config/nvim/pack/github/start/copilot.vim
+     ```
+     git clone --depth=1 https://github.com/github/copilot.vim.git \
+       ~/.config/nvim/pack/github/start/copilot.vim
+     ```
 
-    * Vim, Windows (PowerShell command):
+   * Vim, Windows (PowerShell command):
 
-          git clone --depth=1 https://github.com/github/copilot.vim.git `
-            $HOME/vimfiles/pack/github/start/copilot.vim
+     ```
+     git clone --depth=1 https://github.com/github/copilot.vim.git `
+       $HOME/vimfiles/pack/github/start/copilot.vim
+     ```
 
-    * Neovim, Windows (PowerShell command):
+   * Neovim, Windows (PowerShell command):
 
-          git clone --depth=1 https://github.com/github/copilot.vim.git `
-            $HOME/AppData/Local/nvim/pack/github/start/copilot.vim
+     ```
+     git clone --depth=1 https://github.com/github/copilot.vim.git `
+       $HOME/AppData/Local/nvim/pack/github/start/copilot.vim
+     ```
 
-4.  Start Vim/Neovim and invoke `:Copilot setup`.
-
-[Node.js]: https://nodejs.org/en/download/
-[Neovim]: https://github.com/neovim/neovim/releases/latest
-[Vim]: https://github.com/vim/vim
+4. Start Vim/Neovim and invoke `:Copilot setup`.
 
 Suggestions are displayed inline and can be accepted by pressing the tab key.
 See `:help copilot` for more information.
