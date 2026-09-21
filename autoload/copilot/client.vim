@@ -5,6 +5,7 @@ let s:plugin_version = copilot#version#String()
 let s:error_canceled = {'code': -32800, 'message': 'Canceled'}
 let s:error_exit = {'code': -32097, 'message': 'Process exited'}
 let s:error_connection_inactive = {'code': -32096, 'message': 'Connection inactive'}
+let s:error_invalid_response = {'code': -32603, 'message': 'Response had neither a result nor an error'}
 
 let s:root = expand('<sfile>:h:h:h')
 
@@ -363,7 +364,9 @@ function! s:OnResponse(instance, response, ...) abort
       let request.waiting[timer_start(0, function('s:Callback', [request, 'result', Cb]))] = 1
     endfor
   else
-    call s:RejectRequest(request, response.error)
+    " A response is malformed rather than absent when it names neither; reject
+    " the request instead of throwing E716 out of the callback.
+    call s:RejectRequest(request, get(response, 'error', s:error_invalid_response))
   endif
 endfunction
 

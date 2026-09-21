@@ -52,6 +52,24 @@ copilot.lsp_start_client = function(cmd, client_name, handler_names, opts, setti
   return id
 end
 
+-- Hand Vimscript a response naming exactly one of `error` and `result`, the way
+-- the LSP spec and the Vim job path both do.  Neovim calls a response handler
+-- with (nil, nil) for a result of JSON `null`, and, because vim/lsp/rpc.lua
+-- passes `decoded.result ~= vim.NIL and decoded.result or nil`, for a result of
+-- `false` too -- `workspace/executeCommand` answers `false` when the completion
+-- uuid has left the server's cache.  A plain `{id = id, error = err, result =
+-- result}` drops both nil keys, and copilot#client#LspResponse() then reads
+-- `response.error` off a dictionary that has neither (E716).
+local function respond(client_id, id, err, result)
+  local response = {id = id}
+  if err == nil then
+    response.result = result == nil and vim.NIL or result
+  else
+    response.error = err
+  end
+  vim.call('copilot#client#LspResponse', client_id, response)
+end
+
 copilot.lsp_request = function(client_id, method, params, bufnr)
   local client = vim.lsp.get_client_by_id(client_id)
   if not client then
@@ -62,7 +80,7 @@ copilot.lsp_request = function(client_id, method, params, bufnr)
   end
   local _, id
   local handler = function(err, result)
-    vim.call('copilot#client#LspResponse', client_id, { id = id, error = err, result = result })
+    respond(client_id, id, err, result)
   end
   if vim.fn.has('nvim-0.11') == 1 then
     _, id = client:request(method, params, handler, bufnr)
@@ -79,7 +97,7 @@ copilot.rpc_request = function(client_id, method, params)
   end
   local _, id
   _, id = client.rpc.request(method, params, function(err, result)
-    vim.call('copilot#client#LspResponse', client_id, { id = id, error = err, result = result })
+    respond(client_id, id, err, result)
   end)
   return id
 end
