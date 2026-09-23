@@ -354,19 +354,20 @@ function! s:OnResponse(instance, response, ...) abort
   if request.status !=# 'running'
     return
   endif
-  if has_key(response, 'result')
+  if !empty(get(response, 'error', v:null))
+    call s:RejectRequest(request, response.error)
+  else
     let request.waiting = {}
     let resolve = remove(request, 'resolve')
     call remove(request, 'reject')
     let request.status = 'success'
-    let request.result = response.result
+    " Anything but an error is a success, even a response that arrived with no
+    " `result` at all: Neovim's LSP client cannot hand a null result across to
+    " Lua, so the key is not always there to read.
+    let request.result = get(response, 'result', v:null)
     for Cb in resolve
       let request.waiting[timer_start(0, function('s:Callback', [request, 'result', Cb]))] = 1
     endfor
-  else
-    " A response is malformed rather than absent when it names neither; reject
-    " the request instead of throwing E716 out of the callback.
-    call s:RejectRequest(request, get(response, 'error', s:error_invalid_response))
   endif
 endfunction
 
