@@ -4,8 +4,10 @@
 > single word, and a second press within `g:copilot_double_tab_timeout`
 > milliseconds (300 by default) accepts the rest of the suggestion. Set the
 > timeout to 0 for word-at-a-time only. See `:help copilot-i_<Tab>`, and
-> `test/double-tab.vim` for the regression tests. Everything else tracks
-> upstream `release.`
+> `test/double-tab.vim` for the regression tests. It also carries one fix to
+> the Neovim transport, so that a `false` or null result no longer reads as a
+> malformed response (`test/null-result.vim`). Everything else tracks upstream
+> `release`.
 
 GitHub Copilot is an AI pair programmer tool that helps you write code faster
 and smarter. Trained on billions of lines of public code, GitHub Copilot turns
