@@ -141,7 +141,7 @@ g:copilot_workspace_folders
 g:copilot_double_tab_timeout
                         How long, in milliseconds, a second <Tab> keeps
                         accepting the rest of the suggestion instead of just
-                        the next word.  Defaults to 300.
+                        the next word.  Defaults to 200.
 >
                         let g:copilot_double_tab_timeout = 500
 <
