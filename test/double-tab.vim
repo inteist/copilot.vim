@@ -74,7 +74,7 @@ function! s:Run(name, line, enter, text, overlap, keys, expected) abort
   call s:Check(a:name, a:expected, getline(1, '$'))
 endfunction
 
-let g:copilot_double_tab_timeout = 300
+unlet! g:copilot_double_tab_timeout
 
 call s:Run('single tab accepts one word',
       \ 'let x = ', 'A', 'foo bar baz', 0,
@@ -113,7 +113,7 @@ let g:copilot_double_tab_timeout = 0
 call s:Run('slow second tab accepts a second word',
       \ 'let x = ', 'A', 'foo bar baz', 0,
       \ "\<Tab>\<Tab>", ['let x = foo bar'])
-let g:copilot_double_tab_timeout = 300
+unlet! g:copilot_double_tab_timeout
 
 " Same thing with real elapsed time rather than a zeroed timeout.
 function! s:RunTimed(name, pause, expected) abort
@@ -128,13 +128,13 @@ function! s:RunTimed(name, pause, expected) abort
   call s:Check(a:name, a:expected, getline(1, '$'))
 endfunction
 
-let g:copilot_double_tab_timeout = 300
+unlet! g:copilot_double_tab_timeout
 call s:RunTimed('second tab inside the real window accepts the rest', 50,
       \ ['let x = foo bar baz'])
 let g:copilot_double_tab_timeout = 100
 call s:RunTimed('second tab past the real window accepts a word', 250,
       \ ['let x = foo bar'])
-let g:copilot_double_tab_timeout = 300
+unlet! g:copilot_double_tab_timeout
 
 " No suggestion at all: <Tab> must fall through to a literal tab.
 enew!
