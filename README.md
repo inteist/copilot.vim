@@ -2,7 +2,7 @@
 
 > **Fork note.** This fork changes what `<Tab>` does: one press accepts a
 > single word, and a second press within `g:copilot_double_tab_timeout`
-> milliseconds (300 by default) accepts the rest of the suggestion. Set the
+> milliseconds (200 by default) accepts the rest of the suggestion. Set the
 > timeout to 0 for word-at-a-time only. See `:help copilot-i_<Tab>`, and
 > `test/double-tab.vim` for the regression tests. It also carries one fix to
 > the Neovim transport, so that a `false` or null result no longer reads as a
