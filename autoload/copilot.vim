@@ -569,7 +569,7 @@ function! copilot#DoubleTabRemaining() abort
   if empty(s:tab_state) || s:tab_state.bufnr !=# bufnr('') || mode() !~# '^[iR]'
     return 0
   endif
-  let remaining = get(g:, 'copilot_double_tab_timeout', 300) - (s:Milliseconds() - s:tab_state.time)
+  let remaining = get(g:, 'copilot_double_tab_timeout', 200) - (s:Milliseconds() - s:tab_state.time)
   return remaining > 0 ? remaining : 0
 endfunction
 
