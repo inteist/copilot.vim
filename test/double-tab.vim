@@ -131,6 +131,11 @@ endfunction
 unlet! g:copilot_double_tab_timeout
 call s:RunTimed('second tab inside the real window accepts the rest', 50,
       \ ['let x = foo bar baz'])
+call s:RunTimed('second tab past the default window accepts a word', 250,
+      \ ['let x = foo bar'])
+let g:copilot_double_tab_timeout = 150
+call s:RunTimed('second tab inside the configured window accepts the rest', 50,
+      \ ['let x = foo bar baz'])
 let g:copilot_double_tab_timeout = 100
 call s:RunTimed('second tab past the real window accepts a word', 250,
       \ ['let x = foo bar'])
